@@ -41,7 +41,9 @@
         "build:prod": "webpack --config webpack.prod.js"
     },
     "dependencies": {
-        "axios": "^0.21.1"
+        "axios": "^0.21.1",
+        "react": "^17.0.2",
+        "react-dom": "^17.0.2"
     },
     "devDependencies": {
         "@types/axios": "^0.14.0",
@@ -51,8 +53,6 @@
         "clean-webpack-plugin": "^4.0.0-alpha.0",
         "exports-loader": "^3.0.0",
         "insomnia-components": "^2.3.0",
-        "react": "^17.0.2",
-        "react-dom": "^17.0.2",
         "ts-loader": "^9.2.3",
         "typescript": "^4.3.5",
         "webpack": "^5.44.0",
