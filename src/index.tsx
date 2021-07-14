@@ -17,6 +17,8 @@ async function storeConfig(context, userConfig: UserConfig) {
 }
 
 class GitlabConfigForm extends React.Component<any, any> {
+    private branchOptions;
+
     constructor(props) {
         super(props);
         this.state = {
@@ -24,7 +26,8 @@ class GitlabConfigForm extends React.Component<any, any> {
             'token': "",
             'projectId': null,
             'configFileName': "",
-            'branch': ""
+            'branch': "",
+            'branchOptions': []
         }
 
         this.handleChange = this.handleChange.bind(this);
@@ -51,6 +54,20 @@ class GitlabConfigForm extends React.Component<any, any> {
     async componentDidMount() {
         const config: UserConfig = await loadConfig(this.props.context);
         this.setState(config);
+
+        const provider = new Gitlab(this.props.context);
+        await provider.init();
+
+        const branches = await provider.fetchBranches();
+        const branchOptions = branches.map((b) => {
+            let rObj = {};
+            rObj['value'] = b;
+            rObj['label'] = b;
+            return rObj;
+        });
+        this.setState({
+            'branchOptions': branchOptions
+        });
     }
 
     private buttonStyle = {
@@ -80,7 +97,9 @@ class GitlabConfigForm extends React.Component<any, any> {
                     </label>
                     <label>
                         Branch:
-                        <input name="branch" type="text" placeholder="main" value={this.state.branch} onChange={this.handleChange} />
+                        <select onChange={this.handleChange} value={this.state.branch}>
+                            {this.state.branchOptions.map((branch) => (<option key={branch.value} value={branch.value}>{branch.label}</option>))}
+                        </select>
                     </label>
                 </div>
                 <div className="margin-top" style={this.buttonStyle}>

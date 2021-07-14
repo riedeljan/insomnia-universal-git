@@ -15,7 +15,8 @@ export class Gitlab {
     try {
         return JSON.parse(storedConfig);
     } catch(e) {
-        return null;
+        console.error(e)
+        throw 'Loading config from context failed.'
     }
   }
   
@@ -36,7 +37,26 @@ export class Gitlab {
       baseURL: `${this.config.baseUrl}`,
       timeout: 1000,
       headers: { Authorization: `Bearer ${this.config.token}` },
+      responseType: 'json'
     });
+  }
+
+  async fetchBranches() {
+    if (!this.config?.baseUrl || !this.config?.projectId || !this.config?.token) {
+      return [];
+    }
+    try {
+      const response = await this.authenticate().get(
+        `${this.config.baseUrl}/api/v4/projects/${this.config.projectId}/repository/branches`
+      );
+
+      const branches = response.data.map((o) => o.name);
+
+      return branches;
+    } catch(e) {
+      console.error(e);
+      throw 'Fetching the projects branches via GitLab API failed.'
+    }
   }
 
   async pullWorkspace() {
