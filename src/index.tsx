@@ -28,10 +28,11 @@ class GitlabConfigForm extends React.Component<any, any> {
             'configFileName': "",
             'branch': "",
             'branchOptions': []
-        }
+        };
 
         this.handleChange = this.handleChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
+        this.createNewBranch = this.createNewBranch.bind(this);
     }
 
     handleChange(event) {
@@ -51,10 +52,7 @@ class GitlabConfigForm extends React.Component<any, any> {
         event.preventDefault();
     }
 
-    async componentDidMount() {
-        const config: UserConfig = await loadConfig(this.props.context);
-        this.setState(config);
-
+    async loadBranches() {
         const provider = new Gitlab(this.props.context);
         await provider.init();
 
@@ -66,10 +64,41 @@ class GitlabConfigForm extends React.Component<any, any> {
             return rObj;
         });
         this.setState({
-            'branch': branchOptions[0].value,
             'branchOptions': branchOptions
         });
     }
+
+    async componentDidMount() {
+        const config: UserConfig = await loadConfig(this.props.context);
+        this.setState(config);
+        await this.loadBranches();
+    }
+
+    async createNewBranch() {
+          try {
+            var branchName = await this.props.context.app.prompt(
+                'Set new branch name:', {
+                label: 'Branch name',
+                defaultValue: 'develop',
+                submitName: 'Submit',
+                cancelable: true,
+                }
+            );
+
+            const provider = new Gitlab(this.props.context);
+            await provider.init();
+            await provider.createRemoteBranchFromCurrent(branchName);
+            
+            this.setState({
+                'branch': branchName
+            });
+            this.loadBranches();
+
+          } catch (e) { 
+              console.error(e);
+              throw 'Creating a new branch via GitLab API failed.';
+        }
+      }
 
     private flexContainerStyle = {
         'display': 'flex'
@@ -116,7 +145,7 @@ class GitlabConfigForm extends React.Component<any, any> {
                 </div>
                 <div style={this.flexContainerStyle}>
                     <div className="margin-top" style={this.newBranchButtonStyle}>
-                        <button type="submit">New Branch</button>
+                        <button type="button" onClick={this.createNewBranch}>New Branch</button>
                     </div>
                     <div className="margin-top" style={this.submitButtonStyle}>
                         <button type="submit">Submit</button>

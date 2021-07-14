@@ -41,9 +41,9 @@ export class Gitlab {
     });
   }
 
-  async initRemoteConfigFile() {
+  private async initRemoteConfigFile() {
     try {
-      const reponse = await this.authenticate().post(
+      await this.authenticate().post(
         `${this.config.baseUrl}/api/v4/projects/${this.config.projectId}/repository/files/${this.config.configFileName}`,
         {
           "branch": this.config.branch,
@@ -54,6 +54,17 @@ export class Gitlab {
     } catch(e) {
       console.error(e.response);
       throw 'Creating a new file via GitLab API failed.'
+   }
+  }
+
+  async createRemoteBranchFromCurrent(branchName) {
+    try {
+      await this.authenticate().post(
+        `${this.config.baseUrl}/api/v4/projects/${this.config.projectId}/repository/branches?branch=${branchName}&ref=${this.config.branch}`,
+      );
+    } catch(e) {
+      console.error(e.response);
+      throw 'Creating a new branch via GitLab API failed.'
    }
   }
 
