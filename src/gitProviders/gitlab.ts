@@ -41,6 +41,22 @@ export class Gitlab {
     });
   }
 
+  async initRemoteConfigFile() {
+    try {
+      const reponse = await this.authenticate().post(
+        `${this.config.baseUrl}/api/v4/projects/${this.config.projectId}/repository/files/${this.config.configFileName}`,
+        {
+          "branch": this.config.branch,
+          "content": "{}",
+          "commit_message": `Init new config file ${this.config.configFileName}`
+        }
+      );
+    } catch(e) {
+      console.error(e.response);
+      throw 'Creating a new file via GitLab API failed.'
+   }
+  }
+
   async fetchBranches() {
     if (!this.config?.baseUrl || !this.config?.projectId || !this.config?.token) {
       return [];
@@ -88,8 +104,26 @@ export class Gitlab {
       },
     );
    } catch(e) {
-      console.error(e);
-      throw 'Pushing the workspace via GitLab API failed.'
+      if (e.response.data.message === "A file with this name doesn't exist") {
+        await this.initRemoteConfigFile()
+        await this.authenticate().post(
+          `${this.config.baseUrl}/api/v4/projects/${this.config.projectId}/repository/commits`,
+          {
+            "branch": this.config.branch,
+            "commit_message": messageCommit,
+            "actions": [
+              {
+                "action": "update",
+                "file_path": this.config.configFileName,
+                "content": content
+              }
+            ]
+          },
+        );
+      } else {
+        console.error("response:", e.response);
+        throw 'Pushing the workspace via GitLab API failed.'
+      }
    }
   }
 }

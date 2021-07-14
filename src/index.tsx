@@ -38,7 +38,7 @@ class GitlabConfigForm extends React.Component<any, any> {
         const { target: { name, value } } = event;
         console.debug("Update state property: ", name, value);
         this.setState({[name]: value});
-      }
+    }
     
     async handleSubmit(event) {
         try {
@@ -66,13 +66,25 @@ class GitlabConfigForm extends React.Component<any, any> {
             return rObj;
         });
         this.setState({
+            'branch': branchOptions[0].value,
             'branchOptions': branchOptions
         });
     }
 
-    private buttonStyle = {
+    private flexContainerStyle = {
+        'display': 'flex'
+    }
+
+    private newBranchButtonStyle = {
         'display': 'flex',
-        'flex-direction': 'row-reverse'
+        'flex-direction': 'row',
+        'flex-basis': '50%'
+    }
+
+    private submitButtonStyle = {
+        'display': 'flex',
+        'flex-direction': 'row-reverse',
+        'flex-basis': '50%'
     }
 
     render() {
@@ -97,13 +109,18 @@ class GitlabConfigForm extends React.Component<any, any> {
                     </label>
                     <label>
                         Branch:
-                        <select onChange={this.handleChange} value={this.state.branch}>
+                        <select name="branch" value={this.state.branch} onChange={this.handleChange}>
                             {this.state.branchOptions.map((branch) => (<option key={branch.value} value={branch.value}>{branch.label}</option>))}
                         </select>
                     </label>
                 </div>
-                <div className="margin-top" style={this.buttonStyle}>
-                    <button type="submit">Submit</button>
+                <div style={this.flexContainerStyle}>
+                    <div className="margin-top" style={this.newBranchButtonStyle}>
+                        <button type="submit">New Branch</button>
+                    </div>
+                    <div className="margin-top" style={this.submitButtonStyle}>
+                        <button type="submit">Submit</button>
+                    </div>
                 </div>
             </form>
         );
