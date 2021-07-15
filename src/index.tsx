@@ -17,6 +17,8 @@ async function storeConfig(context, userConfig: UserConfig) {
 }
 
 class GitlabConfigForm extends React.Component<any, any> {
+    private branchOptions;
+
     constructor(props) {
         super(props);
         this.state = {
@@ -24,20 +26,28 @@ class GitlabConfigForm extends React.Component<any, any> {
             'token': "",
             'projectId': null,
             'configFileName': "",
-            'branch': ""
-        }
+            'branch': "",
+            'branchOptions': []
+        };
 
         this.handleChange = this.handleChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
+        this.createNewBranch = this.createNewBranch.bind(this);
     }
 
-    handleChange(event) {
+    async componentDidMount() {
+        const config: UserConfig = await loadConfig(this.props.context);
+        this.setState(config);
+        await this.loadBranches();
+    }
+
+    private handleChange(event) {
         const { target: { name, value } } = event;
         console.debug("Update state property: ", name, value);
         this.setState({[name]: value});
-      }
+    }
     
-    async handleSubmit(event) {
+    private async handleSubmit(event) {
         try {
             storeConfig(this.props.context, this.state as UserConfig);
             await this.props.context.app.alert('Success!', 'To change your configuration, just start the setup again.');
@@ -48,14 +58,64 @@ class GitlabConfigForm extends React.Component<any, any> {
         event.preventDefault();
     }
 
-    async componentDidMount() {
-        const config: UserConfig = await loadConfig(this.props.context);
-        this.setState(config);
+    private async loadBranches() {
+        const provider = new Gitlab(this.props.context);
+        await provider.init();
+
+        const branches = await provider.fetchBranches();
+        const branchOptions = branches.map((b) => {
+            let rObj = {};
+            rObj['value'] = b;
+            rObj['label'] = b;
+            return rObj;
+        });
+        this.setState({
+            'branchOptions': branchOptions
+        });
     }
 
-    private buttonStyle = {
+    private async createNewBranch() {
+          try {
+            var branchName = await this.props.context.app.prompt(
+                'Set new branch name:', {
+                label: 'Branch name',
+                defaultValue: 'develop',
+                submitName: 'Submit',
+                cancelable: true,
+                }
+            );
+
+            const provider = new Gitlab(this.props.context);
+            await provider.init();
+            await provider.createRemoteBranchFromCurrent(branchName);
+            
+            this.setState({
+                'branch': branchName
+            });
+            this.loadBranches();
+            await this.props.context.app.alert('Success!', `Created new branch "${branchName}".`);
+
+          } catch (e) { 
+              console.error(e);
+              await this.props.context.app.alert('Error!', 'Something went wrong. Does the branch exist already?.');
+              throw 'Creating a new branch via GitLab API failed.';
+        }
+      }
+
+    private flexContainerStyle = {
+        'display': 'flex'
+    }
+
+    private newBranchButtonStyle = {
         'display': 'flex',
-        'flex-direction': 'row-reverse'
+        'flex-direction': 'row',
+        'flex-basis': '50%'
+    }
+
+    private submitButtonStyle = {
+        'display': 'flex',
+        'flex-direction': 'row-reverse',
+        'flex-basis': '50%'
     }
 
     render() {
@@ -80,11 +140,18 @@ class GitlabConfigForm extends React.Component<any, any> {
                     </label>
                     <label>
                         Branch:
-                        <input name="branch" type="text" placeholder="main" value={this.state.branch} onChange={this.handleChange} />
+                        <select name="branch" value={this.state.branch} onChange={this.handleChange}>
+                            {this.state.branchOptions.map((branch) => (<option key={branch.value} value={branch.value}>{branch.label}</option>))}
+                        </select>
                     </label>
                 </div>
-                <div className="margin-top" style={this.buttonStyle}>
-                    <button type="submit">Submit</button>
+                <div style={this.flexContainerStyle}>
+                    <div className="margin-top" style={this.newBranchButtonStyle}>
+                        <button type="button" onClick={this.createNewBranch}>New Branch</button>
+                    </div>
+                    <div className="margin-top" style={this.submitButtonStyle}>
+                        <button type="submit">Submit</button>
+                    </div>
                 </div>
             </form>
         );
@@ -111,7 +178,7 @@ async function pushWorkspace(context, models) {
         const gitlabProvider = new Gitlab(context);
         await gitlabProvider.init();
         
-        // parse, pretty format, stringify again. Ugly but necessary because of Insomnia API design
+        // parse, format, stringify again. Ugly but necessary because of Insomnia API design
         gitlabProvider.pushWorkspace(
             JSON.stringify(
                 JSON.parse(workspaceData), // is already stringified JSON
