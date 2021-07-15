@@ -35,13 +35,19 @@ class GitlabConfigForm extends React.Component<any, any> {
         this.createNewBranch = this.createNewBranch.bind(this);
     }
 
-    handleChange(event) {
+    async componentDidMount() {
+        const config: UserConfig = await loadConfig(this.props.context);
+        this.setState(config);
+        await this.loadBranches();
+    }
+
+    private handleChange(event) {
         const { target: { name, value } } = event;
         console.debug("Update state property: ", name, value);
         this.setState({[name]: value});
     }
     
-    async handleSubmit(event) {
+    private async handleSubmit(event) {
         try {
             storeConfig(this.props.context, this.state as UserConfig);
             await this.props.context.app.alert('Success!', 'To change your configuration, just start the setup again.');
@@ -52,7 +58,7 @@ class GitlabConfigForm extends React.Component<any, any> {
         event.preventDefault();
     }
 
-    async loadBranches() {
+    private async loadBranches() {
         const provider = new Gitlab(this.props.context);
         await provider.init();
 
@@ -68,13 +74,7 @@ class GitlabConfigForm extends React.Component<any, any> {
         });
     }
 
-    async componentDidMount() {
-        const config: UserConfig = await loadConfig(this.props.context);
-        this.setState(config);
-        await this.loadBranches();
-    }
-
-    async createNewBranch() {
+    private async createNewBranch() {
           try {
             var branchName = await this.props.context.app.prompt(
                 'Set new branch name:', {
@@ -93,9 +93,11 @@ class GitlabConfigForm extends React.Component<any, any> {
                 'branch': branchName
             });
             this.loadBranches();
+            await this.props.context.app.alert('Success!', `Created new branch "${branchName}".`);
 
           } catch (e) { 
               console.error(e);
+              await this.props.context.app.alert('Error!', 'Something went wrong. Does the branch exist already?.');
               throw 'Creating a new branch via GitLab API failed.';
         }
       }
@@ -176,7 +178,7 @@ async function pushWorkspace(context, models) {
         const gitlabProvider = new Gitlab(context);
         await gitlabProvider.init();
         
-        // parse, pretty format, stringify again. Ugly but necessary because of Insomnia API design
+        // parse, format, stringify again. Ugly but necessary because of Insomnia API design
         gitlabProvider.pushWorkspace(
             JSON.stringify(
                 JSON.parse(workspaceData), // is already stringified JSON
