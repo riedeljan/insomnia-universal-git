@@ -1,6 +1,6 @@
 {
     "name": "insomnia-plugin-universal-git",
-    "version": "1.3.0",
+    "version": "1.3.1",
     "description": "Plugin to sync your insomnia collections and environments with GitLab or Github",
     "main": "dist/index.js",
     "files": [

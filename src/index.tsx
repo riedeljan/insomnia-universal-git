@@ -17,8 +17,6 @@ async function storeConfig(context, userConfig: UserConfig) {
 }
 
 class GitlabConfigForm extends React.Component<any, any> {
-    private branchOptions;
-
     constructor(props) {
         super(props);
         this.state = {
@@ -59,17 +57,18 @@ class GitlabConfigForm extends React.Component<any, any> {
     }
 
     private async loadBranches() {
-        const provider = new Gitlab(this.props.context);
-        await provider.init();
+        const provider = new Gitlab(this.state);
 
-        const branches = await provider.fetchBranches();
+        const branches: Array<any> = await provider.fetchBranches();
         const branchOptions = branches.map((b) => {
             let rObj = {};
             rObj['value'] = b;
             rObj['label'] = b;
             return rObj;
         });
+
         this.setState({
+            'branch': this.state.branch ? this.state.branch : branches[0],
             'branchOptions': branchOptions
         });
     }
@@ -85,8 +84,7 @@ class GitlabConfigForm extends React.Component<any, any> {
                 }
             );
 
-            const provider = new Gitlab(this.props.context);
-            await provider.init();
+            const provider = new Gitlab(this.state);
             await provider.createRemoteBranchFromCurrent(branchName);
             
             this.setState({
@@ -160,6 +158,8 @@ class GitlabConfigForm extends React.Component<any, any> {
 
 async function pushWorkspace(context, models) {
     try {
+        const config: UserConfig = await loadConfig(context);
+
         var commitMessage = await context.app.prompt(
             'GitLab - Push Workspace - Commit Message', {
                 label: 'Commit Message',
@@ -175,8 +175,7 @@ async function pushWorkspace(context, models) {
             workspace: models.workspace
         });
 
-        const gitlabProvider = new Gitlab(context);
-        await gitlabProvider.init();
+        const gitlabProvider = new Gitlab(config);
         
         // parse, format, stringify again. Ugly but necessary because of Insomnia API design
         gitlabProvider.pushWorkspace(
@@ -197,10 +196,11 @@ async function pushWorkspace(context, models) {
 
 async function pullWorkspace(context) {
     try {
-        const gitlabProvider = new Gitlab(context);
-        await gitlabProvider.init();
+        const config: UserConfig = await loadConfig(context);
+        const gitlabProvider = new Gitlab(config);
 
-        await gitlabProvider.pullWorkspace();
+        const workspace = await gitlabProvider.pullWorkspace();
+        await context.data.import.raw(JSON.stringify(workspace));
 
         await context.app.alert('Success!', 'Your workspace config was successfully pulled.');
     } catch(e) {
@@ -235,7 +235,6 @@ const workspaceActions = [
         label: 'GitLab - Push Workspace',
         icon: 'fa-arrow-up',
         action: async(context, models) => {
-            const provider = new Gitlab(context);
             await pushWorkspace(context, models);
 
         },
