@@ -2,35 +2,8 @@ import axios from 'axios';
 import { UserConfig } from '../interfaces/UserConfig';
 
 export class Gitlab {
-  private config: UserConfig;
 
-  constructor (private context) {}
-
-  public async init() {
-    this.config = await this.loadConfig(this.context);
-  }
-
-  private async loadConfig(context): Promise<UserConfig | null> {
-    const storedConfig = await context.store.getItem('gitlab-sync:config');
-    try {
-        return JSON.parse(storedConfig);
-    } catch(e) {
-        console.error(e)
-        throw 'Loading config from context failed.'
-    }
-  }
-  
-  // TODO: Write proper config validation
-
-  /* private validateConfig(config): any {
-    if( typeof(config.token) !== "string" || config.token == "" ){
-      throw "Invalid token";
-    }
-    if(typeof(config.timeout) !== "number" || config.timeout == "") {
-       config.timeout = 5000;
-    }
-    return config;
-  } */
+  constructor (private config) {}
 
   authenticate() {
     return axios.create({
@@ -91,7 +64,7 @@ export class Gitlab {
       const response = await this.authenticate().get(
         `${this.config.baseUrl}/api/v4/projects/${this.config.projectId}/repository/files/${this.config.configFileName}/raw?ref=${this.config.branch}`
       );
-      await this.context.data.import.raw(JSON.stringify(response.data));
+      return(response.data);
     } catch (e) {
         console.error(e);
         throw 'Fetching the workspace via GitLab API failed.'
