@@ -17,7 +17,11 @@ async function storeConfig(context, userConfig: UserConfig) {
     await context.store.setItem('gitlab-sync:config', JSON.stringify(userConfig));
 }
 
-class GitlabConfigForm extends React.Component<any, any> {
+function getProvider(config){
+    return (config.provider == "github")?new Github(config):new Gitlab(config);
+}
+
+class ConfigForm extends React.Component<any, any> {
     constructor(props) {
         super(props);
         this.state = {
@@ -59,7 +63,7 @@ class GitlabConfigForm extends React.Component<any, any> {
 
     private async loadBranches() {
 
-        const provider = (this.state.provider == "github")?new Github(this.state):new Gitlab(this.state);
+        const provider = getProvider(this.state);
 
         const branches: Array<any> = await provider.fetchBranches();
         console.log(branches);
@@ -87,8 +91,8 @@ class GitlabConfigForm extends React.Component<any, any> {
                 }
             );
 
-            const provider = (this.state.provider == "github")?new Github(this.state):new Gitlab(this.state);
-            await provider.createRemoteBranchFromCurrent(branchName);
+              const provider = getProvider(this.state);
+              await provider.createRemoteBranchFromCurrent(branchName);
             
             this.setState({
                 'branch': branchName
@@ -99,7 +103,7 @@ class GitlabConfigForm extends React.Component<any, any> {
           } catch (e) { 
               console.error(e);
               await this.props.context.app.alert('Error!', 'Something went wrong. Does the branch exist already?.');
-              throw 'Creating a new branch via GitLab API failed.';
+              throw 'Creating a new branch via API failed.';
         }
       }
 
@@ -125,7 +129,10 @@ class GitlabConfigForm extends React.Component<any, any> {
                 <div className="form-control form-control--outlined">
                     <label>
                         Provider:
-                        <input name="provider" type="text" placeholder="github" value={this.state.provider} onChange={this.handleChange} />
+                        <select name="provider" value={this.state.provider} onChange={this.handleChange}>
+                            <option value="github">GitHub</option>
+                            <option value="gitlab">GitLab</option>
+                        </select>
                     </label>
                     <label>
                         BaseURL:
@@ -136,7 +143,7 @@ class GitlabConfigForm extends React.Component<any, any> {
                         <input name="token" type="text" placeholder="accessToken123" value={this.state.token} onChange={this.handleChange} />
                     </label>
                     <label>
-                        Project ID:
+                        {(this.state.provider == "github")?"Project Name":"Project ID"}:
                         <input name="projectId" type="text" placeholder="23" value={String(this.state.projectId)} onChange={this.handleChange} />
                     </label>
                     <label>
@@ -149,10 +156,13 @@ class GitlabConfigForm extends React.Component<any, any> {
                             {this.state.branchOptions.map((branch) => (<option key={branch.value} value={branch.value}>{branch.label}</option>))}
                         </select>
                     </label>
-                    <label>
-                        Organization:
-                        <input name="organization" type="text" placeholder="" value={this.state.organization} onChange={this.handleChange} />
-                    </label>
+                    {this.state.provider == "github" &&
+                        <label>
+                            Organization:
+                            <input name="organization" type="text" placeholder="" value={this.state.organization}
+                                   onChange={this.handleChange}/>
+                        </label>
+                    }
                 </div>
                 <div style={this.flexContainerStyle}>
                     <div className="margin-top" style={this.newBranchButtonStyle}>
@@ -186,10 +196,10 @@ async function pushWorkspace(context, models) {
             workspace: models.workspace
         });
 
-        const gitlabProvider = (config.provider == "github")?new Github(config):new Gitlab(config);
-        
+        const provider = getProvider(config);
+
         // parse, format, stringify again. Ugly but necessary because of Insomnia API design
-        gitlabProvider.pushWorkspace(
+        await provider.pushWorkspace(
             JSON.stringify(
                 JSON.parse(workspaceData), // is already stringified JSON
                 null,                      // replacer method
@@ -208,9 +218,9 @@ async function pushWorkspace(context, models) {
 async function pullWorkspace(context) {
     try {
         const config: UserConfig = await loadConfig(context);
-        const gitlabProvider = (config.provider == "github")?new Github(config):new Gitlab(config);
+        const provider = getProvider(config);
 
-        const workspace = await gitlabProvider.pullWorkspace();
+        const workspace = await provider.pullWorkspace();
         await context.data.import.raw(JSON.stringify(workspace));
 
         await context.app.alert('Success!', 'Your workspace config was successfully pulled.');
@@ -221,13 +231,13 @@ async function pullWorkspace(context) {
 
 const workspaceActions = [
     {
-        label: 'Gitlab - Setup',
-        icon: 'fa-gitlab',
+        label: 'Setup',
+        icon: 'fa-cogs',
         action(context, models) {
             const root = document.createElement('div');
-            ReactDom.render(<GitlabConfigForm context={context}/>, root);
+            ReactDom.render(<ConfigForm context={context}/>, root);
 
-            context.app.dialog('GitLab - Setup', root, {
+            context.app.dialog('Git Setup', root, {
                 skinny: true,
                 onHide() {
                     ReactDom.unmountComponentAtNode(root);
@@ -236,14 +246,14 @@ const workspaceActions = [
         }
     },
     {
-        label: 'GitLab - Pull Workspace',
+        label: 'Pull Workspace',
         icon: 'fa-arrow-down',
         action: async(context) => {
             await pullWorkspace(context);
         },
     },
     {
-        label: 'GitLab - Push Workspace',
+        label: 'Push Workspace',
         icon: 'fa-arrow-up',
         action: async(context, models) => {
             await pushWorkspace(context, models);
