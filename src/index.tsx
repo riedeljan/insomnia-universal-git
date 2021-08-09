@@ -1,3 +1,4 @@
+import { Github } from './gitProviders/github';
 import { Gitlab } from './gitProviders/gitlab';
 import { UserConfig } from './interfaces/UserConfig';
 import * as React from 'react';
@@ -57,9 +58,11 @@ class GitlabConfigForm extends React.Component<any, any> {
     }
 
     private async loadBranches() {
-        const provider = new Gitlab(this.state);
+
+        const provider = (this.state.provider == "github")?new Github(this.state):new Gitlab(this.state);
 
         const branches: Array<any> = await provider.fetchBranches();
+        console.log(branches);
         const branchOptions = branches.map((b) => {
             let rObj = {};
             rObj['value'] = b;
@@ -84,7 +87,7 @@ class GitlabConfigForm extends React.Component<any, any> {
                 }
             );
 
-            const provider = new Gitlab(this.state);
+            const provider = (this.state.provider == "github")?new Github(this.state):new Gitlab(this.state);
             await provider.createRemoteBranchFromCurrent(branchName);
             
             this.setState({
@@ -121,6 +124,10 @@ class GitlabConfigForm extends React.Component<any, any> {
             <form onSubmit={this.handleSubmit} className="pad">
                 <div className="form-control form-control--outlined">
                     <label>
+                        Provider:
+                        <input name="provider" type="text" placeholder="github" value={this.state.provider} onChange={this.handleChange} />
+                    </label>
+                    <label>
                         BaseURL:
                         <input name="baseUrl" type="text" placeholder="https://your.gitlab-instance.com" value={this.state.baseUrl} onChange={this.handleChange} />
                     </label>
@@ -141,6 +148,10 @@ class GitlabConfigForm extends React.Component<any, any> {
                         <select name="branch" value={this.state.branch} onChange={this.handleChange}>
                             {this.state.branchOptions.map((branch) => (<option key={branch.value} value={branch.value}>{branch.label}</option>))}
                         </select>
+                    </label>
+                    <label>
+                        Organization:
+                        <input name="organization" type="text" placeholder="" value={this.state.organization} onChange={this.handleChange} />
                     </label>
                 </div>
                 <div style={this.flexContainerStyle}>
@@ -175,7 +186,7 @@ async function pushWorkspace(context, models) {
             workspace: models.workspace
         });
 
-        const gitlabProvider = new Gitlab(config);
+        const gitlabProvider = (config.provider == "github")?new Github(config):new Gitlab(config);
         
         // parse, format, stringify again. Ugly but necessary because of Insomnia API design
         gitlabProvider.pushWorkspace(
@@ -197,7 +208,7 @@ async function pushWorkspace(context, models) {
 async function pullWorkspace(context) {
     try {
         const config: UserConfig = await loadConfig(context);
-        const gitlabProvider = new Gitlab(config);
+        const gitlabProvider = (config.provider == "github")?new Github(config):new Gitlab(config);
 
         const workspace = await gitlabProvider.pullWorkspace();
         await context.data.import.raw(JSON.stringify(workspace));

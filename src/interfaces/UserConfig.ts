@@ -3,5 +3,7 @@ export interface UserConfig {
     'token': string,
     'projectId': number,
     'configFileName': string,
-    'branch': string
+    'branch': string,
+    'organization': string,
+    'provider': string
 }
