@@ -32,7 +32,8 @@ async function pushWorkspace(context, models) {
                 null,                      // replacer method
                 2                          // indentation
             ),
-            commitMessage
+            commitMessage,
+            config
         );
 
         await context.app.alert('Success!', 'Your workspace config was successfully pushed.');
@@ -47,7 +48,7 @@ async function pullWorkspace(context) {
         const config: UserConfig = await Helpers.loadConfig(context);
         const provider = Helpers.getProvider(config);
 
-        const workspace = await provider.pullWorkspace();
+        const workspace = await provider.pullWorkspace(config);
         await context.data.import.raw(JSON.stringify(workspace));
 
         await context.app.alert('Success!', 'Your workspace config was successfully pulled.');

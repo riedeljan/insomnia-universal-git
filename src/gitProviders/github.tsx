@@ -113,18 +113,21 @@ export class GitHub extends React.Component<any, any>{
     );
     }
 
-    authenticate() {
+    authenticate(context) {
+         const baseUrl =  context.baseUrl;
+         const token = context.token;
+
         return axios.create({
-            baseURL: `${this.props.context.baseUrl}`,
+            baseURL: baseUrl,
             timeout: 1000,
-            headers: { Authorization: `Bearer ${this.props.context.token}` },
+            headers: { Authorization: `Bearer ${token}` },
             responseType: 'json'
         });
     }
 
     private async initRemoteConfigFile() {
         try {
-            await this.authenticate().post(
+            await this.authenticate(this.props.context).post(
                 `${this.props.context.baseUrl}/repos/${this.props.context.organization}/${this.props.context.projectId}/contents/${this.props.context.configFileName}`,
                 {
                     "branch": this.props.context.branch,
@@ -140,7 +143,7 @@ export class GitHub extends React.Component<any, any>{
 
     async createRemoteBranchFromCurrent(branchName) {
         try {
-            await this.authenticate().post(`${this.props.context.baseUrl}/repos/${this.props.context.organization}/${this.props.context.projectId}/git/refs`,{"ref":"refs/heads/"+branchName,"sha":this.props.context.branch});
+            await this.authenticate(this.props.context).post(`${this.props.context.baseUrl}/repos/${this.props.context.organization}/${this.props.context.projectId}/git/refs`,{"ref":"refs/heads/"+branchName,"sha":this.props.context.branch});
         } catch(e) {
             console.error(e.response);
             throw 'Creating a new branch via Github API failed.'
@@ -152,7 +155,7 @@ export class GitHub extends React.Component<any, any>{
             return [];
         }
         try {
-            const response = await this.authenticate().get(`${this.props.context.baseUrl}/repos/${this.props.context.organization}/${this.props.context.projectId}/git/refs/heads`,);
+            const response = await this.authenticate(this.props.context).get(`${this.props.context.baseUrl}/repos/${this.props.context.organization}/${this.props.context.projectId}/git/refs/heads`,);
             return response.data.map((o) => {
                 let heads = o.ref.split("/");
                 return heads[heads.length-1];
@@ -164,10 +167,10 @@ export class GitHub extends React.Component<any, any>{
         }
     }
 
-    async pullWorkspace() {
+    async pullWorkspace(context) {
         try {
-            const getFileResponse = await this.authenticate().get(`${this.props.context.baseUrl}/repos/${this.props.context.organization}/${this.props.context.projectId}/contents/${this.props.context.configFileName}`);
-            const response = await this.authenticate().get(getFileResponse.data.download_url);
+            const getFileResponse = await this.authenticate(context).get(`${context.baseUrl}/repos/${context.organization}/${context.projectId}/contents/${context.configFileName}`);
+            const response = await this.authenticate(context).get(getFileResponse.data.download_url);
             return(response.data);
         } catch (e) {
             console.error(e);
@@ -184,29 +187,31 @@ export class GitHub extends React.Component<any, any>{
         return null;
     }
 
-    async pushWorkspace(content, messageCommit) {
+    async pushWorkspace(content, messageCommit,context) {
         try {
             const buff = Buffer.from(content, 'utf-8');
             const contentBase64 = buff.toString('base64');
 
             let data = {
-                "branch": this.props.context.branch,
+                "branch": context.branch,
                 "message": messageCommit,
                 "content":contentBase64,
                 sha: null
             };
+            console.log()
+            console.log(this.props);
 
-            const refs = await this.authenticate().get(`${this.props.context.baseUrl}/repos/${this.props.context.organization}/${this.props.context.projectId}/git/refs/heads`);
-            const info = this.findObjectByKey(refs.data, "ref", `refs/heads/${this.props.context.branch}`);
-            const tree = await this.authenticate().get(`${this.props.context.baseUrl}/repos/${this.props.context.organization}/${this.props.context.projectId}/git/trees/${info.object.sha}`);
-            const fileTreeInfo = this.findObjectByKey(tree.data.tree,"path",this.props.context.configFileName);
+            const refs = await this.authenticate(context).get(`${context.baseUrl}/repos/${context.organization}/${context.projectId}/git/refs/heads`);
+            const info = this.findObjectByKey(refs.data, "ref", `refs/heads/${context.branch}`);
+            const tree = await this.authenticate(context).get(`${context.baseUrl}/repos/${context.organization}/${context.projectId}/git/trees/${info.object.sha}`);
+            const fileTreeInfo = this.findObjectByKey(tree.data.tree,"path",context.configFileName);
 
             if(fileTreeInfo != null){
                 data.sha=fileTreeInfo.sha;
             }
 
-            await this.authenticate().put(
-                `${this.props.context.baseUrl}/repos/${this.props.context.organization}/${this.props.context.projectId}/contents/${this.props.context.configFileName}`,
+            await this.authenticate(context).put(
+                `${context.baseUrl}/repos/${context.organization}/${context.projectId}/contents/${context.configFileName}`,
                 data,
             );
         } catch(e) {

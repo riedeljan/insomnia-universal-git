@@ -110,18 +110,22 @@ export class GitLab extends React.Component<any, any>{
     );
     }
 
-  authenticate() {
+  authenticate(context) {
+    const baseUrl =  context.baseUrl;
+    const token = context.token;
+
+
     return axios.create({
-      baseURL: `${this.props.context.baseUrl}`,
+      baseURL: baseUrl,
       timeout: 1000,
-      headers: { Authorization: `Bearer ${this.props.context.token}` },
+      headers: { Authorization: `Bearer ${token}` },
       responseType: 'json'
     });
   }
 
   private async initRemoteConfigFile() {
     try {
-      await this.authenticate().post(
+      await this.authenticate(this.props.context).post(
         `${this.props.context.baseUrl}/api/v4/projects/${this.props.context.projectId}/repository/files/${this.props.context.configFileName}`,
         {
           "branch": this.props.context.branch,
@@ -137,7 +141,7 @@ export class GitLab extends React.Component<any, any>{
 
   async createRemoteBranchFromCurrent(branchName) {
     try {
-      await this.authenticate().post(
+      await this.authenticate(this.props.context).post(
         `${this.props.context.baseUrl}/api/v4/projects/${this.props.context.projectId}/repository/branches?branch=${branchName}&ref=${this.props.context.branch}`,
       );
     } catch(e) {
@@ -151,7 +155,7 @@ export class GitLab extends React.Component<any, any>{
       return [];
     }
     try {
-      const response = await this.authenticate().get(
+      const response = await this.authenticate(this.props.context).get(
         `${this.props.context.baseUrl}/api/v4/projects/${this.props.context.projectId}/repository/branches`
       );
 
@@ -162,10 +166,10 @@ export class GitLab extends React.Component<any, any>{
     }
   }
 
-  async pullWorkspace() {
+  async pullWorkspace(context) {
     try {
-      const response = await this.authenticate().get(
-        `${this.props.context.baseUrl}/api/v4/projects/${this.props.context.projectId}/repository/files/${this.props.context.configFileName}/raw?ref=${this.props.context.branch}`
+      const response = await this.authenticate(context).get(
+        `${context.baseUrl}/api/v4/projects/${context.projectId}/repository/files/${context.configFileName}/raw?ref=${context.branch}`
       );
       return(response.data);
     } catch (e) {
@@ -174,17 +178,17 @@ export class GitLab extends React.Component<any, any>{
     }
   }
 
-  async pushWorkspace(content, messageCommit) {
+  async pushWorkspace(content, messageCommit,context) {
    try {
-    await this.authenticate().post(
-      `${this.props.context.baseUrl}/api/v4/projects/${this.props.context.projectId}/repository/commits`,
+    await this.authenticate(context).post(
+      `${context.baseUrl}/api/v4/projects/${context.projectId}/repository/commits`,
       {
-        "branch": this.props.context.branch,
+        "branch": context.branch,
         "commit_message": messageCommit,
         "actions": [
           {
             "action": "update",
-            "file_path": this.props.context.configFileName,
+            "file_path": context.configFileName,
             "content": content
           }
         ]
@@ -193,15 +197,15 @@ export class GitLab extends React.Component<any, any>{
    } catch(e) {
       if (e.response.data.message === "A file with this name doesn't exist") {
         await this.initRemoteConfigFile()
-        await this.authenticate().post(
-          `${this.props.context.baseUrl}/api/v4/projects/${this.props.context.projectId}/repository/commits`,
+        await this.authenticate(context).post(
+          `${context.baseUrl}/api/v4/projects/${context.projectId}/repository/commits`,
           {
-            "branch": this.props.context.branch,
+            "branch": context.branch,
             "commit_message": messageCommit,
             "actions": [
               {
                 "action": "update",
-                "file_path": this.props.context.configFileName,
+                "file_path": context.configFileName,
                 "content": content
               }
             ]
