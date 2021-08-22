@@ -33,7 +33,6 @@ export class ProviderSelector extends React.Component<any, any>{
         this.setState({[name]: value});
     }
 
-    const // @ts-ignore
     handleChildChange = (name,value) =>{
         console.debug("Update state property: ", name, value);
         this.setState({[name]: value});

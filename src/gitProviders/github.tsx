@@ -5,7 +5,7 @@ export class GitHub extends React.Component<any, any>{
 
     constructor(props) {
         super(props);
-        console.log(this.context);
+        console.debug("GitHub component context:", this.context);
         this.handleChange = this.handleChange.bind(this);
         this.createNewBranch = this.createNewBranch.bind(this);
     }
@@ -22,7 +22,7 @@ export class GitHub extends React.Component<any, any>{
 
     private async loadBranches() {
         const branches: Array<any> = await this.fetchBranches();
-        console.log("Branches:"+branches);
+        console.debug("branches:", branches);
         const branchOptions = branches.map((b) => {
             let rObj = {};
             rObj['value'] = b;
@@ -33,11 +33,10 @@ export class GitHub extends React.Component<any, any>{
         this.props.onElementChange('branchOptions',branchOptions);
     }
 
-    const // @ts-ignore
     createNewBranch = async () =>{
 
         try {
-            var branchName = await this.props.app.prompt(
+            const branchName = await this.props.app.prompt(
                 'Set new branch name:', {
                     label: 'Branch name',
                     defaultValue: 'develop',
@@ -113,7 +112,7 @@ export class GitHub extends React.Component<any, any>{
     );
     }
 
-    authenticate(context) {
+    private static authenticate(context) {
          const baseUrl =  context.baseUrl;
          const token = context.token;
 
@@ -127,7 +126,7 @@ export class GitHub extends React.Component<any, any>{
 
     private async initRemoteConfigFile() {
         try {
-            await this.authenticate(this.props.context).post(
+            await GitHub.authenticate(this.props.context).post(
                 `${this.props.context.baseUrl}/repos/${this.props.context.organization}/${this.props.context.projectId}/contents/${this.props.context.configFileName}`,
                 {
                     "branch": this.props.context.branch,
@@ -143,7 +142,7 @@ export class GitHub extends React.Component<any, any>{
 
     async createRemoteBranchFromCurrent(branchName) {
         try {
-            await this.authenticate(this.props.context).post(`${this.props.context.baseUrl}/repos/${this.props.context.organization}/${this.props.context.projectId}/git/refs`,{"ref":"refs/heads/"+branchName,"sha":this.props.context.branch});
+            await GitHub.authenticate(this.props.context).post(`${this.props.context.baseUrl}/repos/${this.props.context.organization}/${this.props.context.projectId}/git/refs`,{"ref":"refs/heads/"+branchName,"sha":this.props.context.branch});
         } catch(e) {
             console.error(e.response);
             throw 'Creating a new branch via Github API failed.'
@@ -155,7 +154,7 @@ export class GitHub extends React.Component<any, any>{
             return [];
         }
         try {
-            const response = await this.authenticate(this.props.context).get(`${this.props.context.baseUrl}/repos/${this.props.context.organization}/${this.props.context.projectId}/git/refs/heads`,);
+            const response = await GitHub.authenticate(this.props.context).get(`${this.props.context.baseUrl}/repos/${this.props.context.organization}/${this.props.context.projectId}/git/refs/heads`,);
             return response.data.map((o) => {
                 let heads = o.ref.split("/");
                 return heads[heads.length-1];
@@ -169,8 +168,8 @@ export class GitHub extends React.Component<any, any>{
 
     async pullWorkspace(context) {
         try {
-            const getFileResponse = await this.authenticate(context).get(`${context.baseUrl}/repos/${context.organization}/${context.projectId}/contents/${context.configFileName}`);
-            const response = await this.authenticate(context).get(getFileResponse.data.download_url);
+            const getFileResponse = await GitHub.authenticate(context).get(`${context.baseUrl}/repos/${context.organization}/${context.projectId}/contents/${context.configFileName}`);
+            const response = await GitHub.authenticate(context).get(getFileResponse.data.download_url);
             return(response.data);
         } catch (e) {
             console.error(e);
@@ -178,8 +177,8 @@ export class GitHub extends React.Component<any, any>{
         }
     }
 
-    findObjectByKey(array, key, value) {
-        for (var i = 0; i < array.length; i++) {
+    private static findObjectByKey(array, key, value) {
+        for (let i = 0; i < array.length; i++) {
             if (array[i][key] === value) {
                 return array[i];
             }
@@ -198,19 +197,18 @@ export class GitHub extends React.Component<any, any>{
                 "content":contentBase64,
                 sha: null
             };
-            console.log()
-            console.log(this.props);
+            console.debug("props:", this.props);
 
-            const refs = await this.authenticate(context).get(`${context.baseUrl}/repos/${context.organization}/${context.projectId}/git/refs/heads`);
-            const info = this.findObjectByKey(refs.data, "ref", `refs/heads/${context.branch}`);
-            const tree = await this.authenticate(context).get(`${context.baseUrl}/repos/${context.organization}/${context.projectId}/git/trees/${info.object.sha}`);
-            const fileTreeInfo = this.findObjectByKey(tree.data.tree,"path",context.configFileName);
+            const refs = await GitHub.authenticate(context).get(`${context.baseUrl}/repos/${context.organization}/${context.projectId}/git/refs/heads`);
+            const info = GitHub.findObjectByKey(refs.data, "ref", `refs/heads/${context.branch}`);
+            const tree = await GitHub.authenticate(context).get(`${context.baseUrl}/repos/${context.organization}/${context.projectId}/git/trees/${info.object.sha}`);
+            const fileTreeInfo = GitHub.findObjectByKey(tree.data.tree,"path",context.configFileName);
 
-            if(fileTreeInfo != null){
+            if(fileTreeInfo){
                 data.sha=fileTreeInfo.sha;
             }
 
-            await this.authenticate(context).put(
+            await GitHub.authenticate(context).put(
                 `${context.baseUrl}/repos/${context.organization}/${context.projectId}/contents/${context.configFileName}`,
                 data,
             );

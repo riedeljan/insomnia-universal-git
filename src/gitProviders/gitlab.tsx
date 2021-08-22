@@ -23,7 +23,7 @@ export class GitLab extends React.Component<any, any>{
     private async loadBranches() {
 
         const branches: Array<any> = await this.fetchBranches();
-        console.log("Branches:"+branches);
+        console.debug("branches:", branches);
         const branchOptions = branches.map((b) => {
             let rObj = {};
             rObj['value'] = b;
@@ -36,7 +36,7 @@ export class GitLab extends React.Component<any, any>{
 
     private async createNewBranch() {
         try {
-            var branchName = await this.props.context.app.prompt(
+            const branchName = await this.props.context.app.prompt(
                 'Set new branch name:', {
                     label: 'Branch name',
                     defaultValue: 'develop',
