@@ -1,0 +1,80 @@
+.loader {
+    border: 3px solid #f3f3f3;
+    -webkit-animation: spin 1s linear infinite;
+    animation: spin 1s linear infinite;
+    border-top: 2px solid #555;
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.flexContainerStyle {
+    display: flex
+}
+
+.newBranchButtonStyle {
+    display: flex;
+    flex-direction: row;
+    flex-basis: 50%
+}
+
+.submitButtonStyle {
+    display: flex;
+    flex-direction: row-reverse;
+    flex-basis: 50%
+}
+
+.dropDownStyle {
+    display: flex;
+    flex-direction: row;
+}
+
+.inputStyle {
+    height: 35px;
+}
+
+.reloadButtonStyle {
+    margin: auto auto 0 10px;
+    height: 35px;
+    border: 1px solid var(--hl-md);
+    padding: var(--padding-sm);
+    border-radius: var(--radius-md);
+    background-color: var(--hl-xxs);
+}
+
+.configPathStyle {
+    margin-top: 2px;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.gitLogDialog {
+    display: flex;
+    flex-flow: column;
+}
+
+.commitBorderStyle {
+    margin-left: 5px;
+    margin-top: 5px;
+    border: 1px solid var(--hl-md);
+    padding: var(--padding-sm);
+    border-Radius: var(--radius-md);
+    background-color: var(--hl-xxs);
+}
+
+.loadMoreButtonStyle {
+    margin: 10px auto;
+    border: 1px solid var(--hl-md);
+    padding: 5px;
+    border-radius: var(--radius-md);
+    background-color: var(--hl-xxs);
+}

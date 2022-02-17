@@ -1,10 +1,13 @@
 import axios, {AxiosResponse} from 'axios';
-import {UserConfig} from '../interfaces/UserConfig';
-import {CommitInfo} from "../interfaces/CommitInfo";
+import {WorkspaceConfig} from '../models/WorkspaceConfig';
+import {CommitInfo} from "../models/CommitInfo";
+import {Project} from "../models/Project";
+import {domainToASCII} from "url";
+import {Branch} from "../models/Branch";
 
 export class Gitlab {
 
-  constructor(private config) {
+  constructor(private config: WorkspaceConfig) {
   }
 
   authenticate() {
@@ -23,9 +26,9 @@ export class Gitlab {
   private async initRemoteConfigFile() {
     try {
       await this.authenticate().post(
-        `${this.config.baseUrl}/api/v4/projects/${this.config.projectId}/repository/files/${this.validateQueryPart(this.config.configFileName)}`,
+        `${this.buildRepoUrl()}files/${this.validateQueryPart(this.config.configFileName)}`,
         {
-          "branch": this.config.branch,
+          "branch": this.config.branch.name,
           "content": "{}",
           "commit_message": `Init new config file ${this.config.configFileName.split("/").pop()}`
         }
@@ -36,42 +39,58 @@ export class Gitlab {
     }
   }
 
-  async createRemoteBranchFromCurrent(branchName) {
+  async createRemoteBranchFromCurrent(branchName): Promise<Branch> {
     try {
-      await this.authenticate().post(
-        `${this.config.baseUrl}/api/v4/projects/${this.config.projectId}/repository/branches?branch=${branchName}&ref=${this.config.branch}`,
+      const response = await this.authenticate().post(
+        `${this.buildRepoUrl()}branches?branch=${branchName}&ref=${this.config.branch.name}`,
       );
+
+      return response.data
     } catch (e) {
       console.error(e.response);
       throw 'Creating a new branch via GitLab API failed.'
     }
   }
 
-  async fetchBranches() {
-    if (!this.config?.baseUrl || !this.config?.projectId || !this.config?.token) {
+  async fetchBranches(): Promise<Branch[]> {
+    if (!this.config?.baseUrl || !this.config?.project?.id || !this.config?.token) {
       return [];
     }
     try {
       const response = await this.authenticate().get(
-        `${this.config.baseUrl}/api/v4/projects/${this.config.projectId}/repository/branches`
+        `${this.buildRepoUrl()}branches`
       );
 
-      const branches = response.data.map((o) => o.name);
-
-      return branches;
+      return response.data;
     } catch (e) {
       console.error(e);
       throw 'Fetching the projects branches via GitLab API failed.'
     }
   }
 
+  async fetchProjects(pageNo: number, search?: string): Promise<Project[]> {
+    if (!this.config?.baseUrl || !this.config?.token) {
+      return [];
+    }
+    try {
+      const response = await this.authenticate().get(
+        `${this.config.baseUrl}/api/v4/projects?page=${pageNo}${search ? `&search=${search}` : ""}`
+      );
+
+      return response.data;
+    } catch (e) {
+      console.error(e);
+      throw 'Fetching the projects via GitLab API failed.'
+    }
+  }
+
   async fetchCommits(pageNo: number) {
-    if (!this.config?.baseUrl || !this.config?.projectId || !this.config?.token) {
+    if (!this.config?.baseUrl || !this.config?.project?.id || !this.config?.token) {
       return [];
     }
     try {
       const response: AxiosResponse<CommitInfo[]> = await this.authenticate().get(
-        `${this.config.baseUrl}/api/v4/projects/${this.config.projectId}/repository/commits?page=${pageNo}`
+        `${this.buildRepoUrl()}commits?page=${pageNo}`
       );
 
       return response.data
@@ -84,7 +103,7 @@ export class Gitlab {
   async pullWorkspace() {
     try {
       const response = await this.authenticate().get(
-        `${this.config.baseUrl}/api/v4/projects/${this.config.projectId}/repository/files/${this.validateQueryPart(this.config.configFileName)}/raw?ref=${this.config.branch}`
+        `${this.buildRepoUrl()}files/${this.validateQueryPart(this.config.configFileName)}/raw?ref=${this.config.branch.name}`
       );
       return (response.data);
     } catch (e) {
@@ -96,9 +115,9 @@ export class Gitlab {
   async pushWorkspace(content, messageCommit) {
     try {
       await this.authenticate().post(
-        `${this.config.baseUrl}/api/v4/projects/${this.config.projectId}/repository/commits`,
+        `${this.buildRepoUrl()}commits`,
         {
-          "branch": this.config.branch,
+          "branch": this.config.branch.name,
           "commit_message": messageCommit,
           "actions": [
             {
@@ -113,9 +132,9 @@ export class Gitlab {
       if (e.response.data.message === "A file with this name doesn't exist") {
         await this.initRemoteConfigFile()
         await this.authenticate().post(
-          `${this.config.baseUrl}/api/v4/projects/${this.config.projectId}/repository/commits`,
+          `${this.buildRepoUrl()}commits`,
           {
-            "branch": this.config.branch,
+            "branch": this.config.branch.name,
             "commit_message": messageCommit,
             "actions": [
               {
@@ -131,5 +150,9 @@ export class Gitlab {
         throw 'Pushing the workspace via GitLab API failed.'
       }
     }
+  }
+
+  private buildRepoUrl() {
+    return `${this.config.baseUrl}/api/v4/projects/${this.config.project.id}/repository/`;
   }
 }
