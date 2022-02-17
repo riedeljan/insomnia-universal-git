@@ -90,7 +90,7 @@ export class Gitlab {
     }
     try {
       const response: AxiosResponse<CommitInfo[]> = await this.authenticate().get(
-        `${this.buildRepoUrl()}commits?page=${pageNo}`
+        `${this.buildRepoUrl()}commits?page=${pageNo}&ref_name=${this.config.branch.name}`
       );
 
       return response.data
