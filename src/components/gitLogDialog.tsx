@@ -38,7 +38,7 @@ export function GitLogDialog({context, models}: DialogProps) {
             return (<div key={value.id} className="commitBorderStyle">
               <p>message: {value.title}</p>
               <p>author: {value.author_name}</p>
-              <p>date: {value.committed_date}</p>
+              <p>date: {new Date(value.committed_date).toString()}</p>
             </div>);
           })
         }

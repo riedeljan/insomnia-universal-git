@@ -11,6 +11,8 @@ export function PushWorkspaceModal({context, models}: DialogProps) {
   const [isCommitting, setIsCommitting] = useState(false);
 
   const commit = async () => {
+    if (!commitMessage)
+      return;
     try {
       setIsCommitting(true)
       const config: WorkspaceConfig = await loadConfig(context, models);
