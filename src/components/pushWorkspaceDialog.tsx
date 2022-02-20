@@ -6,17 +6,20 @@ import {Gitlab} from "../gitProviders/gitlab";
 import {CircularLoader} from "./circularLoader";
 import {loadConfig} from "../configUtils";
 
-export function PushWorkspaceModal({context, models}: DialogProps) {
+export function PushWorkspaceDialog({context, models}: DialogProps) {
   const [commitMessage, setCommitMessage] = useState("Update workspace");
   const [isCommitting, setIsCommitting] = useState(false);
+  const [status, setStatus] = useState("");
 
   const commit = async () => {
     if (!commitMessage)
       return;
     try {
       setIsCommitting(true)
+      setStatus("Loading Config...");
       const config: WorkspaceConfig = await loadConfig(context, models);
 
+      setStatus("Exporting Workspace...");
       let workspaceData = await context.data.export.insomnia({
         includePrivate: false,
         format: 'json',
@@ -25,19 +28,21 @@ export function PushWorkspaceModal({context, models}: DialogProps) {
 
       const gitlabProvider = new Gitlab(config);
 
-      // parse, format, stringify again. Ugly but necessary because of Insomnia API design
+      setStatus("Uploading export file...");
       await gitlabProvider.pushWorkspace(
         JSON.stringify(
-          JSON.parse(workspaceData), // is already stringified JSON
-          null,                      // replacer method
-          2                          // indentation
+          JSON.parse(workspaceData),
+          null,
+          2
         ),
         commitMessage
       );
 
+      setStatus("");
       await context.app.alert('Success!', 'Your workspace config was successfully pushed.');
     } catch (e) {
       console.log(e);
+      setStatus(e);
       await context.app.alert('Error!', 'Something went wrong. Please try pushing again and check your setup.');
     } finally {
       setIsCommitting(false)
@@ -63,6 +68,7 @@ export function PushWorkspaceModal({context, models}: DialogProps) {
               {isCommitting ? <CircularLoader/> : "Commit"}</button>
           </div>
         </label>
+        {status && (<p>{status}</p>)}
       </div>
     </form>
 

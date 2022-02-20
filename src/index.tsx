@@ -4,7 +4,7 @@ import * as React from 'react';
 import * as ReactDom from 'react-dom';
 import './styles.css';
 import {GitLogDialog} from "./components/gitLogDialog";
-import {PushWorkspaceModal} from "./components/pushWorkspaceModal";
+import {PushWorkspaceDialog} from "./components/pushWorkspaceDialog";
 import {GitlabConfigForm} from "./components/gitlabConfigForm";
 import {loadConfig} from "./configUtils";
 
@@ -51,7 +51,7 @@ const workspaceActions = [
     icon: 'fa-arrow-up',
     action: async (context, models) => {
       const root = document.createElement('div');
-      ReactDom.render(<PushWorkspaceModal context={context} models={models}/>, root);
+      ReactDom.render(<PushWorkspaceDialog context={context} models={models}/>, root);
 
       context.app.dialog('GitLab - Push Workspace', root, {
         skinny: false,
