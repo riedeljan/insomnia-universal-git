@@ -126,10 +126,10 @@ export function GitlabConfigForm({context, models}: DialogProps) {
     try {
       const provider = new Gitlab(buildConfig());
       const branches = await provider.fetchBranches();
-      if (branch && !branches.find((e) => e.web_url == branch.web_url)) {
+      if (!branch || (branch && !branches.find((e) => e.web_url == branch.web_url))) {
         setBranch(branches[0]);
       }
-      setBranches(branches)
+      setBranches(branches);
     } catch (e) {
       setErrorMessage(e);
     } finally {
