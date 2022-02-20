@@ -226,7 +226,7 @@ export function GitlabConfigForm({context, models}: DialogProps) {
                 className="inputStyle"
                 name="projectName"
                 type="text"
-                placeholder="search and select your project..."
+                placeholder="Search..."
                 value={projectName}
                 onChange={(event => setProjectName(event.target.value))}/>
               <button
@@ -287,7 +287,7 @@ export function GitlabConfigForm({context, models}: DialogProps) {
           <button type="submit">{isSubmitting ? <CircularLoader/> : "Submit"}</button>
         </div>
       </div>
-      {errorMessage != "" && <div><br/><p>{errorMessage}</p></div>}
+      {errorMessage != "" && <div><br/><strong className="errorMessage">{errorMessage}</strong></div>}
     </form>
   );
 }

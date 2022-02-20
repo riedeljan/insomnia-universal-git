@@ -38,12 +38,10 @@ export function PushWorkspaceDialog({context, models}: DialogProps) {
         commitMessage
       );
 
-      setStatus("");
-      await context.app.alert('Success!', 'Your workspace config was successfully pushed.');
+      setStatus("Done!");
     } catch (e) {
       console.log(e);
-      setStatus(e);
-      await context.app.alert('Error!', 'Something went wrong. Please try pushing again and check your setup.');
+      setStatus(`Error! ${e}`);
     } finally {
       setIsCommitting(false)
     }
@@ -68,7 +66,8 @@ export function PushWorkspaceDialog({context, models}: DialogProps) {
               {isCommitting ? <CircularLoader/> : "Commit"}</button>
           </div>
         </label>
-        {status && (<p>{status}</p>)}
+        {status && (<p
+          className={status == "Done!" ? "success status" : status.startsWith("Error!") ? "errorMessage status" : ""}>{status}</p>)}
       </div>
     </form>
 

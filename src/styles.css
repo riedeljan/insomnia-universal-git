@@ -78,3 +78,16 @@
     border-radius: var(--radius-md);
     background-color: var(--hl-xxs);
 }
+
+.errorMessage {
+    color: red;
+}
+
+.success {
+    color: limegreen;
+}
+
+.status {
+    font-size: 14px;
+    font-weight: bold;
+}

@@ -64,7 +64,7 @@ export class Gitlab {
       return response.data;
     } catch (e) {
       console.error(e);
-      throw 'Fetching the projects branches via GitLab API failed.'
+      throw `Fetching the projects branches via GitLab API failed.  ${e}`
     }
   }
 
@@ -80,7 +80,7 @@ export class Gitlab {
       return response.data;
     } catch (e) {
       console.error(e);
-      throw 'Fetching the projects via GitLab API failed.'
+      throw `Fetching the projects via GitLab API failed. ${e}`
     }
   }
 
@@ -96,7 +96,7 @@ export class Gitlab {
       return response.data
     } catch (e) {
       console.error(e);
-      throw 'Fetching the projects branch commit via GitLab API failed.'
+      throw `Fetching the projects branch commit via GitLab API failed. ${e}`
     }
   }
 
@@ -108,7 +108,7 @@ export class Gitlab {
       return (response.data);
     } catch (e) {
       console.error(e);
-      throw 'Fetching the workspace via GitLab API failed.'
+      throw `Fetching the workspace via GitLab API failed. ${e}`
     }
   }
 
@@ -147,7 +147,7 @@ export class Gitlab {
         );
       } else {
         console.error("response:", e.response);
-        throw 'Pushing the workspace via GitLab API failed.'
+        throw `Pushing the workspace via GitLab API failed. ${e.response}`
       }
     }
   }
