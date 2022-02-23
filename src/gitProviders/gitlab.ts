@@ -17,11 +17,11 @@ export class Gitlab {
   private async initRemoteConfigFile() {
     try {
       await this.authenticate().post(
-        `${this.config.baseUrl}/api/v4/projects/${this.config.projectId}/repository/files/${this.config.configFileName}`,
+        `${this.config.baseUrl}/api/v4/projects/${this.config.projectId}/repository/files/${this.config.configFileName || 'config.json'}`,
         {
           "branch": this.config.branch,
           "content": "{}",
-          "commit_message": `Init new config file ${this.config.configFileName}`
+          "commit_message": `Init new config file ${this.config.configFileName || 'config.json'}`
         }
       );
     } catch(e) {
@@ -62,7 +62,7 @@ export class Gitlab {
   async pullWorkspace() {
     try {
       const response = await this.authenticate().get(
-        `${this.config.baseUrl}/api/v4/projects/${this.config.projectId}/repository/files/${this.config.configFileName}/raw?ref=${this.config.branch}`
+        `${this.config.baseUrl}/api/v4/projects/${this.config.projectId}/repository/files/${this.config.configFileName || 'config.json'}/raw?ref=${this.config.branch}`
       );
       return(response.data);
     } catch (e) {
@@ -81,7 +81,7 @@ export class Gitlab {
         "actions": [
           {
             "action": "update",
-            "file_path": this.config.configFileName,
+            "file_path": this.config.configFileName || 'config.json',
             "content": content
           }
         ]
@@ -98,7 +98,7 @@ export class Gitlab {
             "actions": [
               {
                 "action": "update",
-                "file_path": this.config.configFileName,
+                "file_path": this.config.configFileName || 'config.json',
                 "content": content
               }
             ]
