@@ -1,6 +1,6 @@
 {
     "name": "insomnia-plugin-universal-git",
-    "version": "1.3.1",
+    "version": "1.4.0",
     "description": "Plugin to sync your insomnia collections and environments with GitLab or Github",
     "main": "dist/index.js",
     "files": [
@@ -51,8 +51,10 @@
         "@types/react": "^17.0.13",
         "@types/react-dom": "^17.0.8",
         "clean-webpack-plugin": "^4.0.0-alpha.0",
+        "css-loader": "^6.6.0",
         "exports-loader": "^3.0.0",
         "insomnia-components": "^2.3.0",
+        "style-loader": "^3.3.1",
         "ts-loader": "^9.2.3",
         "typescript": "^4.3.5",
         "webpack": "^5.44.0",
