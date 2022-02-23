@@ -28,7 +28,7 @@ export class Gitlab {
     authenticate() {
         return axios.create({
             baseURL: `${this.config.baseUrl}`,
-            timeout: 1000,
+            timeout: 10000,
             headers: { Authorization: `Bearer ${this.config.token}` },
         });
     }
