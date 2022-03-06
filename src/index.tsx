@@ -8,6 +8,7 @@ async function loadConfig(context): Promise<UserConfig | null> {
     try {
         return JSON.parse(storedConfig);
     } catch(e) {
+        console.error("Loading config failed: ", e);
         return null;
     }
 }
@@ -68,7 +69,7 @@ class GitlabConfigForm extends React.Component<any, any> {
         });
 
         this.setState({
-            'branch': this.state.branch ? this.state.branch : branches[0],
+            'branch': this.state.branch && this.state.branch in branches ? this.state.branch : branches[0],
             'branchOptions': branchOptions
         });
     }
